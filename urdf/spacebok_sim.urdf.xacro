@@ -1,0 +1,161 @@
+<?xml version="1.0"?>
+<robot name="spacebok" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:property name="body_length" value="0.5" />
+  <xacro:property name="body_width" value="0.3" />
+  <xacro:property name="body_height" value="0.1" />
+  <xacro:property name="long_leg_size" value="0.25 0.02 0.03" />
+  <xacro:property name="short_leg_size" value="0.1 0.2 0.03" />
+  <xacro:property name="long_leg_length" value="0.25" />
+  <xacro:property name="long_leg_width" value="0.02" />
+  <xacro:property name="long_leg_height" value="0.05" />
+  <xacro:property name="short_leg_length" value="0.1" />
+  <xacro:property name="short_leg_width" value="0.02" />
+  <xacro:property name="short_leg_height" value="0.05" />
+  <xacro:property name="motor_diameter" value="0.1" />
+  <xacro:property name="motor_width" value="0.2" />
+  <xacro:property name="pi" value="3.141" />
+  <xacro:property name="front" value="1" />
+  <xacro:property name="back" value="1" />
+  <xacro:property name="front" value="1" />
+  <xacro:property name="front" value="1" />
+  <xacro:property name="reduction" value="1" />
+
+
+  <material name="blue">
+    <color rgba="0 0 0.8 1"/>
+  </material>
+
+  <material name="black">
+    <color rgba="0 0 0 1"/>
+  </material>
+
+  <material name="white">
+    <color rgba="1 1 1 1"/>
+  </material>
+
+  <xacro:macro name="default_inertial" params="mass">
+    <inertial>
+      <mass value="${mass}" />
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0" />
+    </inertial>
+  </xacro:macro>
+
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="${body_length} ${body_width} ${body_height}"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="${body_length} ${body_width} ${body_height}"/>
+      </geometry>
+    
+    </collision>
+    <xacro:default_inertial mass="5" />
+  </link>
+
+  <xacro:macro name="upper_leg_long" params="prefix suffix front_hind left_right">
+
+    <link name="upper_leg_long_${prefix}_${suffix}">
+      <visual>
+        <geometry>
+          <box size="${long_leg_size}"/>
+        </geometry>
+ 	<material name="blue"/>
+        <origin rpy="0 0 0" xyz="-${long_leg_length/2} 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="${long_leg_size}"/>
+        </geometry>
+      </collision>
+      <xacro:default_inertial mass="5" />
+    </link>
+    <joint name="${prefix}_${suffix}_joint_1" type="revolute">
+      <axis xyz="0 1 0" />
+      <limit effort="10.0" lower="-${pi/4}" upper="${pi/4}" velocity="0.5"/>
+      <parent link="base_link"/>
+      <child link="upper_leg_long_${prefix}_${suffix}"/>
+      <origin xyz="${front_hind*body_length/2} ${left_right*body_width/2+left_right*long_leg_width/2} 0" rpy="0 -${pi/4} 0"/>
+    </joint>
+
+  </xacro:macro>
+
+  <xacro:macro name="lower_leg_long" params="prefix suffix front_hind left_right">
+
+    <link name="lower_leg_long_${prefix}_${suffix}">
+      <visual>
+        <geometry>
+          <box size="${long_leg_size}"/>
+        </geometry>
+ 	<material name="white"/>
+        <origin rpy="0 0 0" xyz="-${long_leg_length/2} 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="${long_leg_size}"/>
+        </geometry>
+      </collision>
+      <xacro:default_inertial mass="5" />
+    </link>
+    <joint name="${prefix}_${suffix}_joint_2" type="revolute">
+      <axis xyz="0 1 0" />
+      <limit effort="10.0" lower="-${pi/4}" upper="${pi/4}" velocity="0.5"/>
+      <parent link="upper_leg_long_${prefix}_${suffix}"/>
+      <child link="lower_leg_long_${prefix}_${suffix}"/>
+      <origin xyz="-${long_leg_length} 0 0" rpy="0 -${pi/2} 0"/>
+    <origin rpy="0 -1.5705 0" xyz="-0.25 0 0"/>
+    </joint>
+
+  </xacro:macro>
+  
+
+
+  <xacro:upper_leg_long prefix="front" suffix="left" front_hind="1" left_right="1"/>
+  <xacro:upper_leg_long prefix="front" suffix="right" front_hind="1" left_right="-1"/>
+  <xacro:upper_leg_long prefix="hind" suffix="left" front_hind="-1" left_right="1"/>
+  <xacro:upper_leg_long prefix="hind" suffix="right" front_hind="-1" left_right="-1"/>
+  
+  <xacro:lower_leg_long prefix="front" suffix="left" front_hind="-1" left_right="-1"/>
+  <xacro:lower_leg_long prefix="front" suffix="right" front_hind="-1" left_right="-1"/>
+  <xacro:lower_leg_long prefix="hind" suffix="left" front_hind="-1" left_right="-1"/>
+  <xacro:lower_leg_long prefix="hind" suffix="right" front_hind="-1" left_right="-1"/>
+
+
+  <xacro:macro name="transmission_macro" params="prefix suffix number">
+
+    <transmission name="${prefix}_${suffix}_motor_${number}">
+      <type>transmission_interface/SimpleTransmission</type>
+      <actuator name="${prefix}_${suffix}_motor_${number}">
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+      <joint name="${prefix}_${suffix}_joint_${number}">
+        <hardwareInterface>PositionJointInterface</hardwareInterface>
+      </joint>
+    </transmission>
+
+  </xacro:macro>
+ 
+  <xacro:transmission_macro prefix="front" suffix="left" number="1"/>
+  <xacro:transmission_macro prefix="front" suffix="right" number="1"/>
+  <xacro:transmission_macro prefix="hind" suffix="left" number="1"/>
+  <xacro:transmission_macro prefix="hind" suffix="right" number="1"/>
+
+  <xacro:transmission_macro prefix="front" suffix="left" number="2"/>
+  <xacro:transmission_macro prefix="front" suffix="right" number="2"/>
+  <xacro:transmission_macro prefix="hind" suffix="left" number="2"/>
+  <xacro:transmission_macro prefix="hind" suffix="right" number="2"/>
+
+
+  <gazebo>
+    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+      <robotNamespace>/</robotNamespace>
+    </plugin>
+  </gazebo>
+
+
+
+</robot>

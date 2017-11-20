@@ -1,0 +1,4 @@
+type: "position_controllers/JointPositionController"
+joint: front_right_joint_1
+joint: front_left_joint_1
+
